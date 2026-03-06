@@ -75,4 +75,9 @@ def get_pub(pub_id: str):
 def serve_index():
     return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
-app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+@app.get("/{path:path}")
+def serve_static(path: str):
+    file_path = os.path.join(FRONTEND_DIR, path)
+    if os.path.isfile(file_path):
+        return FileResponse(file_path)
+    return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))

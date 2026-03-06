@@ -380,6 +380,16 @@
     }
     .temp-perfect { color: #1a6030; }
     .temp-warm    { color: #a04000; }
+
+    /* Marker hover zoom */
+    .guinness-marker svg {
+      transition: transform 0.18s ease, filter 0.18s ease;
+      transform-origin: bottom center;
+    }
+    .guinness-marker:hover svg {
+      transform: scale(1.55);
+      cursor: pointer;
+    }
     #sidebar-body {
       flex: 1;
       overflow-y: auto;
@@ -564,7 +574,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  const API_BASE = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+  const API_BASE = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
     ? "http://localhost:8000"
     : "";
 
@@ -603,7 +613,8 @@
 
   // ── Guinness glass marker ──
   function guinnessGlassIcon(score) {
-    const fill = score !== null ? Math.max(0.06, score / 5) : 0;
+    // Cubic scale: 3/5 ≈ 22% full, 5/5 = 100%, makes differences obvious
+    const fill = score !== null ? Math.max(0.04, Math.pow(score / 5, 3)) : 0;
     const hasScore = score !== null;
 
     let outlineColor, beerColor;
@@ -644,7 +655,7 @@
         <line x1="20" y1="6" x2="50" y2="6" stroke="#2d1200" stroke-width="4"/>
         <line x1="16" y1="90" x2="54" y2="90" stroke="#2d1200" stroke-width="4"/>
       </svg>`,
-      className: "",
+      className: "guinness-marker",
       iconSize:   [W, H],
       iconAnchor: [W / 2, H],
       popupAnchor:[0, -(H + 4)],
