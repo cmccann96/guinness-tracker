@@ -321,7 +321,65 @@
     .badge-poor      { color: #8a1800; background: #ffe0dc; }
     .badge-unrated   { color: #7a6840; background: #ede0c0; }
 
-    /* ── Sidebar body ── */
+    /* ── Sub-scores ── */
+    .sub-scores {
+      padding: 10px 20px 4px;
+      border-top: 1px dashed #c8a860;
+    }
+
+    .sub-score-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .sub-score-label {
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #7a5820;
+      width: 58px;
+      flex-shrink: 0;
+    }
+
+    .sub-score-track {
+      flex: 1;
+      height: 7px;
+      background: #e0d0a8;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1.5px solid #c8a860;
+    }
+
+    .sub-score-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #2d1200, #8a5e00, #c89000);
+      transition: width 0.85s cubic-bezier(0.4,0,0.2,1);
+      width: 0%;
+    }
+
+    .sub-score-val {
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 900;
+      color: #2d1200;
+      width: 24px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .sub-score-temp {
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 800;
+      font-style: italic;
+    }
+    .temp-perfect { color: #1a6030; }
+    .temp-warm    { color: #a04000; }
     #sidebar-body {
       flex: 1;
       overflow-y: auto;
@@ -495,6 +553,7 @@
       </div>
     </div>
     <div id="sidebar-body">
+      <div id="sidebar-subscores"></div>
       <div class="divider"><span>🍀 AI Verdict</span></div>
       <div id="sidebar-summary"></div>
       <div class="divider"><span>🍺 Reviews</span></div>
@@ -644,6 +703,43 @@
     const badge = document.getElementById("sidebar-badge");
     badge.className = `score-badge ${cls}`;
     badge.textContent = txt;
+
+    // Sub-scores: deterministic from pub name, average = total score
+    const ssEl = document.getElementById("sidebar-subscores");
+    if (pub.guinness_score !== null) {
+      // Stable pseudo-random offset from pub name
+      let hash = 0;
+      for (const c of pub.name) hash = (Math.imul(hash, 31) + c.charCodeAt(0)) >>> 0;
+      const r = (hash % 1000) / 1000; // 0–1
+      const offset = +(((r - 0.5) * 1.2).toFixed(1)); // –0.6 to +0.6
+      const domage  = +Math.min(5, Math.max(1, pub.guinness_score + offset)).toFixed(1);
+      const schtick = +Math.min(5, Math.max(1, pub.guinness_score * 2 - domage)).toFixed(1);
+
+      ssEl.innerHTML = `<div class="sub-scores">
+        <div class="sub-score-row">
+          <span class="sub-score-label">Domage</span>
+          <div class="sub-score-track"><div class="sub-score-fill" id="ss-domage" style="width:0%"></div></div>
+          <span class="sub-score-val">${domage}</span>
+        </div>
+        <div class="sub-score-row">
+          <span class="sub-score-label">Schtick</span>
+          <div class="sub-score-track"><div class="sub-score-fill" id="ss-schtick" style="width:0%"></div></div>
+          <span class="sub-score-val">${schtick}</span>
+        </div>
+        <div class="sub-score-row">
+          <span class="sub-score-label">Temp</span>
+          <span class="sub-score-temp ${pub.guinness_score >= 4.5 ? 'temp-perfect' : 'temp-warm'}">
+            ${pub.guinness_score >= 4.5 ? '🌡️ Perfect' : '🌡️ Could be a degree warma'}
+          </span>
+        </div>
+      </div>`;
+      setTimeout(() => {
+        document.getElementById("ss-domage").style.width  = `${(domage  / 5) * 100}%`;
+        document.getElementById("ss-schtick").style.width = `${(schtick / 5) * 100}%`;
+      }, 60);
+    } else {
+      ssEl.innerHTML = "";
+    }
 
     document.getElementById("sidebar-summary").textContent =
       pub.summary || "No verdict available yet.";
