@@ -1,6 +1,8 @@
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -16,6 +18,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
+
 
 @app.on_event("startup")
 def startup():
@@ -27,7 +31,7 @@ def get_config():
     return {"stadia_api_key": os.getenv("STADIA_API_KEY", "")}
 
 
-
+@app.get("/pubs")
 def list_pubs():
     conn = get_connection()
     rows = conn.execute("""
@@ -64,3 +68,11 @@ def get_pub(pub_id: str):
     result = dict(pub)
     result["reviews"] = [dict(r) for r in reviews]
     return result
+
+
+# Serve frontend — must be after all API routes
+@app.get("/")
+def serve_index():
+    return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
+
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
